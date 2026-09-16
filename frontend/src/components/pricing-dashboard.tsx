@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { getGreeks, getPrice, requestError } from "@/lib/api";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { getGreeks, getPrice, getSensitivity, requestError } from "@/lib/api";
 import { defaultFields, numberError, sharedFieldsValid, toOptionInputs } from "@/lib/form";
 import { money, percentage } from "@/lib/format";
-import type { GreeksResponse, PriceResponse, PricingRequest } from "@/lib/types";
+import type { GreeksResponse, PriceResponse, PricingRequest, SensitivityResponse } from "@/lib/types";
 import { ErrorMessage, NumberInput, OptionTypeInput, SharedInputs, SubmitButton } from "./form-controls";
 import { ResultCard } from "./result-card";
+import { AnalyticsSection } from "./analytics-section";
 
 const greekDefinitions: { key: keyof GreeksResponse; label: string; symbol: string; description: string }[] = [
   { key: "delta", label: "Delta", symbol: "Δ", description: "Price change / $1 stock increase" },
@@ -24,6 +25,11 @@ export function PricingDashboard() {
   const [submitted, setSubmitted] = useState<PricingRequest | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [greeksFailed, setGreeksFailed] = useState(false);
+  const [analytics, setAnalytics] = useState<SensitivityResponse | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const analyticsRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => analyticsRequest.current?.abort(), []);
   const valid = sharedFieldsValid(fields) && !numberError(fields.sigma) && Number(fields.sigma) / 100 > 0;
 
   function update(name: keyof typeof fields, value: string) {
@@ -33,6 +39,28 @@ export function PricingDashboard() {
     setSubmitted(null);
     setErrors([]);
     setGreeksFailed(false);
+    analyticsRequest.current?.abort();
+    analyticsRequest.current = null;
+    setAnalytics(null);
+    setAnalyticsLoading(false);
+    setAnalyticsError(null);
+  }
+
+  async function refreshAnalytics(payload: PricingRequest) {
+    analyticsRequest.current?.abort();
+    const controller = new AbortController();
+    analyticsRequest.current = controller;
+    setAnalytics(null);
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      const result = await getSensitivity({ ...payload, variables: ["S", "sigma", "T"], num_points: 81 }, controller.signal);
+      if (analyticsRequest.current === controller) setAnalytics(result);
+    } catch (error) {
+      if (analyticsRequest.current === controller && !controller.signal.aborted) setAnalyticsError(requestError(error));
+    } finally {
+      if (analyticsRequest.current === controller) setAnalyticsLoading(false);
+    }
   }
 
   async function calculate(event: FormEvent<HTMLFormElement>) {
@@ -45,6 +73,8 @@ export function PricingDashboard() {
     setErrors([]);
     setGreeksFailed(false);
     setSubmitted(payload);
+    // Analytics shares the submitted inputs, but never delays the price or Greeks.
+    void refreshAnalytics(payload);
 
     // Both endpoints use the same snapshot. Keep successful results if only one fails.
     const [priceResult, greeksResult] = await Promise.allSettled([getPrice(payload), getGreeks(payload)]);
@@ -63,6 +93,7 @@ export function PricingDashboard() {
   const resultStatus = loading ? "Calculating…" : errors.length ? "Calculation issue" : price && greeks ? "Calculation complete" : "Ready to calculate";
 
   return (
+    <>
     <section id="pricing" aria-labelledby="pricing-heading" className="workspace-section">
       <div className="section-heading">
         <div><span className="section-index">01 /</span><h2 id="pricing-heading">Valuation</h2></div>
@@ -105,5 +136,14 @@ export function PricingDashboard() {
         </div>
       </div>
     </section>
+    <AnalyticsSection
+      data={analytics}
+      inputs={submitted}
+      loading={analyticsLoading}
+      error={analyticsError}
+      refreshDisabled={loading || analyticsLoading || !submitted}
+      onRefresh={() => { if (submitted) void refreshAnalytics(submitted); }}
+    />
+    </>
   );
 }

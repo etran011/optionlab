@@ -42,7 +42,7 @@ export function ImpliedVolatility() {
   return (
     <section id="implied-volatility" aria-labelledby="iv-heading" className="workspace-section iv-section">
       <div className="section-heading">
-        <div><span className="section-index">02 /</span><h2 id="iv-heading">Implied volatility</h2></div>
+        <div><span className="section-index">03 /</span><h2 id="iv-heading">Implied volatility</h2></div>
         <span className="section-caption">Infer volatility from an observed option price.</span>
       </div>
       <div className="iv-panel">

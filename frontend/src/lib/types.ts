@@ -31,3 +31,25 @@ export interface GreeksResponse {
 export interface ImpliedVolatilityResponse {
   implied_volatility: number;
 }
+
+export type SweepVariable = "S" | "sigma" | "T";
+
+export interface SensitivityRequest extends PricingRequest {
+  variables: SweepVariable[];
+  num_points: number;
+}
+
+export interface SensitivityPoint extends GreeksResponse {
+  x: number;
+  price: number;
+}
+
+export interface SensitivitySweep {
+  variable: SweepVariable;
+  base_value: number;
+  points: SensitivityPoint[];
+}
+
+export interface SensitivityResponse {
+  sweeps: SensitivitySweep[];
+}

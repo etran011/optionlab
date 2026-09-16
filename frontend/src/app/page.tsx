@@ -1,5 +1,6 @@
 import { ImpliedVolatility } from "@/components/implied-volatility";
 import { PricingDashboard } from "@/components/pricing-dashboard";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   return (
@@ -10,11 +11,14 @@ export default function Home() {
           <a href="#main" className="brand" aria-label="OptionLab home">Option<span>Lab</span></a>
           <nav aria-label="Workspace navigation">
             <a href="#pricing" className="nav-active">Pricer</a>
-            <a href="#risk-sensitivities">Analytics</a>
+            <a href="#analytics">Analytics</a>
             <a href="#model-notes">Models</a>
             <a href="#about">About</a>
           </nav>
-          <span className="header-label">EUROPEAN OPTIONS</span>
+          <div className="header-actions">
+            <span className="header-label">EUROPEAN OPTIONS</span>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <main id="main" className="page-shell">

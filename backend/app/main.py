@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, status
 from .pricing.black_scholes import black_scholes_price
 from .pricing.greeks import black_scholes_greeks
 from .pricing.implied_volatility import implied_volatility
+from .pricing.sensitivity import calculate_sensitivity
 from .schemas import (
     GreeksResponse,
     HealthResponse,
@@ -12,6 +13,8 @@ from .schemas import (
     ImpliedVolatilityResponse,
     OptionPricingRequest,
     PriceResponse,
+    SensitivityRequest,
+    SensitivityResponse,
 )
 
 
@@ -60,3 +63,14 @@ def calculate_implied_volatility(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
         ) from exc
     return ImpliedVolatilityResponse(implied_volatility=result)
+
+
+@app.post("/sensitivity", response_model=SensitivityResponse)
+def sensitivity(request: SensitivityRequest) -> SensitivityResponse:
+    """Return independent input sweeps in one bounded request to the pricing engine."""
+    try:
+        return calculate_sensitivity(request)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
+        ) from exc

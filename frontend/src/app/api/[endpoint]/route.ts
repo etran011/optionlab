@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const endpoints = new Set(["price", "greeks", "implied-volatility"]);
+const endpoints = new Set(["price", "greeks", "implied-volatility", "sensitivity"]);
 
 export async function POST(
   request: NextRequest,

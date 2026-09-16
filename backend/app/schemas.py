@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, FiniteFloat
+from pydantic import BaseModel, Field, FiniteFloat, field_validator
 
 
 class OptionInputs(BaseModel):
@@ -67,3 +67,40 @@ class ImpliedVolatilityResponse(BaseModel):
     implied_volatility: FiniteFloat = Field(
         gt=0, description="Annualized implied volatility as a decimal; 0.20 means 20%."
     )
+
+
+SweepVariable = Literal["S", "sigma", "T"]
+
+
+class SensitivityRequest(OptionPricingRequest):
+    """Batch independent sweeps around one unchanged set of base inputs."""
+
+    variables: list[SweepVariable] = Field(min_length=1, max_length=3)
+    num_points: int = Field(
+        default=81, ge=21, le=201, strict=True,
+        description="Uniform samples per sweep; exact base and in-range strike may add points.",
+    )
+
+    @field_validator("variables")
+    @classmethod
+    def unique_variables(cls, value: list[SweepVariable]) -> list[SweepVariable]:
+        if len(value) != len(set(value)):
+            raise ValueError("Sweep variables must be unique.")
+        return value
+
+
+class SensitivityPoint(GreeksResponse):
+    """Unrounded model outputs at a single scenario, in existing engine units."""
+
+    x: FiniteFloat = Field(gt=0, description="Swept input: USD, decimal volatility, or years.")
+    price: FiniteFloat
+
+
+class SensitivitySweep(BaseModel):
+    variable: SweepVariable
+    base_value: FiniteFloat = Field(gt=0)
+    points: list[SensitivityPoint]
+
+
+class SensitivityResponse(BaseModel):
+    sweeps: list[SensitivitySweep]
