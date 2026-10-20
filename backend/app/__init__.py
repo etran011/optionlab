@@ -1,2 +1,2 @@
-"""Option pricer backend application package."""
+"""OptionLab backend application package."""
 

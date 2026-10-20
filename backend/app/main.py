@@ -18,7 +18,7 @@ from .schemas import (
 )
 
 
-app = FastAPI(title="Option Pricing API")
+app = FastAPI(title="OptionLab API")
 
 
 @app.get("/health", response_model=HealthResponse)

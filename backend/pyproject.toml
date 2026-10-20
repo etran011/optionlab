@@ -3,9 +3,9 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "option-pricer-backend"
+name = "optionlab-backend"
 version = "0.1.0"
-description = "Backend for the option pricing web application."
+description = "OptionLab API for European option pricing, Greeks, and implied volatility."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi",
